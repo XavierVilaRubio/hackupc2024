@@ -9,7 +9,7 @@ enum Topics {
 }
 
 onMounted(() => {
-  client.value = mqtt.connect('mqtt://192.168.41.60:8080')
+  client.value = mqtt.connect('mqtt://hackupc:abelxavisergi@167.235.199.58:8080')
 
   client.value.on('connect', () => client.value?.subscribe(Topics.Events))
 
