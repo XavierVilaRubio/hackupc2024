@@ -11,13 +11,7 @@ enum Topics {
 onMounted(() => {
   client.value = mqtt.connect('mqtt://192.168.41.60:8080')
 
-  client.value.on('connect', () =>
-    client.value?.subscribe(Topics.Events, (err) => {
-      if (!err) {
-        client.value?.publish(Topics.Events, 'testiiiing')
-      }
-    })
-  )
+  client.value.on('connect', () => client.value?.subscribe(Topics.Events))
 
   client.value.on('message', (topic, message) => {
     // message is Buffer
@@ -138,9 +132,25 @@ const send = (type: 'control_led' | 'buzzer') => {
           </div>
         </UiCardContent>
       </UiCard>
-      <UiButton @click="() => client?.publish(Topics.Commands, '00')"
-        >panik</UiButton
-      >
+      <div class="space-y-4">
+        <UiButton
+          variant="ghost"
+          class="w-full space-x-4"
+          @click="() => client?.publish(Topics.Commands, '00')"
+        >
+          <span class="mr-2">
+            <IconsBiohazard :size="16" />
+          </span>
+          panik</UiButton
+        >
+        <UiButton
+          class="w-full"
+          variant="ghost"
+          @click="() => client?.publish(Topics.Commands, '11')"
+        >
+          <span class="mr-2"> <IconsParty :size="16" /> </span>party</UiButton
+        >
+      </div>
     </div>
   </div>
 
