@@ -1,21 +1,64 @@
 <script setup lang="ts">
-const { status, data, send, open, close } = useWebSocket<string>(
-  'ws://127.0.0.1/',
-  {
-    autoReconnect: true,
-    heartbeat: true,
-  }
-)
+import mqtt, { type MqttClient } from 'mqtt'
 
-const led = computed(() => (data.value ? JSON.parse(data.value).led : false))
-const sensor = computed(() =>
-  data.value ? JSON.parse(data.value).sensor : false
-)
+const client = ref<MqttClient | null>(null)
+
+enum Topics {
+  Events = 'events',
+  Commands = 'commands',
+}
+
+onMounted(() => {
+  client.value = mqtt.connect('mqtt://192.168.187.60:8080')
+
+  client.value.on('connect', () => {
+    client.value?.subscribe(Topics.Events, (err) => {
+      if (!err) {
+        client.value?.publish('patata', 'Hello mqtt')
+      }
+    })
+  })
+
+  client.value.on('message', (topic, message) => {
+    // message is Buffer
+    console.log(message.toString())
+  })
+})
+
+const state = ref('00')
+const led = computed(() => state.value.at(0) === '1')
+const sensor = computed(() => state.value.at(1) === '1')
+
+// enum Sensors {
+//   LED = 0,
+//   SENSOR = 1,
+// }
+
+const status = ref('')
+const send = (type: 'led' | 'sensor') => {
+  switch (type) {
+    case 'led':
+      client.value?.publish(
+        Topics.Commands,
+        `${led.value ? '0' : '1'}${state.value.at(1)}`
+      )
+      // socket.value?.send(`${led.value ? '0' : '1'}${state.value.at(1)}`)
+      break
+    case 'sensor':
+      client.value?.publish(
+        Topics.Commands,
+        `${state.value.at(0)}${sensor.value ? '0' : '1'}`
+      )
+      // socket.value?.send(`${state.value.at(0)}${sensor.value ? '0' : '1'}`)
+      break
+  }
+}
+// const send2 = (type: Sensors) => {}
 </script>
 <template>
   <div class="w-screen h-screen grid place-content-center gap-8">
     <p>{{ status }}</p>
-
+    <UiButton @click="() => send('led')">test</UiButton>
     <div class="min-w-96 space-y-4">
       <div class="flex gap-2">
         <UiToggle
@@ -27,79 +70,14 @@ const sensor = computed(() =>
           {{ led ? 'On' : 'Off' }}
         </UiToggle>
         <div class="size-10 *:m-auto content-center">
-          <svg
-            v-if="led"
-            xmlns="http://www.w3.org/2000/svg"
-            class="icon icon-tabler icon-tabler-bulb-filled"
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="#2c3e50"
-            fill="none"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <path
-              d="M4 11a1 1 0 0 1 .117 1.993l-.117 .007h-1a1 1 0 0 1 -.117 -1.993l.117 -.007h1z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-            <path
-              d="M12 2a1 1 0 0 1 .993 .883l.007 .117v1a1 1 0 0 1 -1.993 .117l-.007 -.117v-1a1 1 0 0 1 1 -1z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-            <path
-              d="M21 11a1 1 0 0 1 .117 1.993l-.117 .007h-1a1 1 0 0 1 -.117 -1.993l.117 -.007h1z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-            <path
-              d="M4.893 4.893a1 1 0 0 1 1.32 -.083l.094 .083l.7 .7a1 1 0 0 1 -1.32 1.497l-.094 -.083l-.7 -.7a1 1 0 0 1 0 -1.414z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-            <path
-              d="M17.693 4.893a1 1 0 0 1 1.497 1.32l-.083 .094l-.7 .7a1 1 0 0 1 -1.497 -1.32l.083 -.094l.7 -.7z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-            <path
-              d="M14 18a1 1 0 0 1 1 1a3 3 0 0 1 -6 0a1 1 0 0 1 .883 -.993l.117 -.007h4z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-            <path
-              d="M12 6a6 6 0 0 1 3.6 10.8a1 1 0 0 1 -.471 .192l-.129 .008h-6a1 1 0 0 1 -.6 -.2a6 6 0 0 1 3.6 -10.8z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-          </svg>
-          <svg
-            v-else
-            xmlns="http://www.w3.org/2000/svg"
-            class="icon icon-tabler icon-tabler-bulb"
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="#2c3e50"
-            fill="none"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <path d="M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7" />
-            <path
-              d="M9 16a5 5 0 1 1 6 0a3.5 3.5 0 0 0 -1 3a2 2 0 0 1 -4 0a3.5 3.5 0 0 0 -1 -3"
-            />
-            <path d="M9.7 17l4.6 0" />
-          </svg>
+          <IconsLightBulbFilled v-if="led" />
+          <IconsLightBulb v-else />
         </div>
       </div>
-      <UiButton @mousedown="() => send('start')" @mouseup="() => send('stop')">
+      <UiButton
+        @mousedown="() => send('sensor')"
+        @mouseup="() => send('sensor')"
+      >
         Press
       </UiButton>
       <div class="flex gap-2">
@@ -112,76 +90,8 @@ const sensor = computed(() =>
           {{ sensor ? 'On' : 'Off' }}
         </UiToggle>
         <div class="size-10 *:m-auto content-center">
-          <svg
-            v-if="sensor"
-            xmlns="http://www.w3.org/2000/svg"
-            class="icon icon-tabler icon-tabler-bulb-filled"
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="#2c3e50"
-            fill="none"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <path
-              d="M4 11a1 1 0 0 1 .117 1.993l-.117 .007h-1a1 1 0 0 1 -.117 -1.993l.117 -.007h1z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-            <path
-              d="M12 2a1 1 0 0 1 .993 .883l.007 .117v1a1 1 0 0 1 -1.993 .117l-.007 -.117v-1a1 1 0 0 1 1 -1z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-            <path
-              d="M21 11a1 1 0 0 1 .117 1.993l-.117 .007h-1a1 1 0 0 1 -.117 -1.993l.117 -.007h1z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-            <path
-              d="M4.893 4.893a1 1 0 0 1 1.32 -.083l.094 .083l.7 .7a1 1 0 0 1 -1.32 1.497l-.094 -.083l-.7 -.7a1 1 0 0 1 0 -1.414z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-            <path
-              d="M17.693 4.893a1 1 0 0 1 1.497 1.32l-.083 .094l-.7 .7a1 1 0 0 1 -1.497 -1.32l.083 -.094l.7 -.7z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-            <path
-              d="M14 18a1 1 0 0 1 1 1a3 3 0 0 1 -6 0a1 1 0 0 1 .883 -.993l.117 -.007h4z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-            <path
-              d="M12 6a6 6 0 0 1 3.6 10.8a1 1 0 0 1 -.471 .192l-.129 .008h-6a1 1 0 0 1 -.6 -.2a6 6 0 0 1 3.6 -10.8z"
-              stroke-width="0"
-              fill="currentColor"
-            />
-          </svg>
-          <svg
-            v-else
-            xmlns="http://www.w3.org/2000/svg"
-            class="icon icon-tabler icon-tabler-bulb"
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="#2c3e50"
-            fill="none"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <path d="M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7" />
-            <path
-              d="M9 16a5 5 0 1 1 6 0a3.5 3.5 0 0 0 -1 3a2 2 0 0 1 -4 0a3.5 3.5 0 0 0 -1 -3"
-            />
-            <path d="M9.7 17l4.6 0" />
-          </svg>
+          <IconsLightBulbFilled v-if="led" />
+          <IconsLightBulb v-else />
         </div>
       </div>
     </div>

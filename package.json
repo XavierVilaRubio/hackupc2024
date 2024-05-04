@@ -17,6 +17,7 @@
     "@vueuse/nuxt": "^10.9.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "mqtt": "^5.5.5",
     "nuxt": "^3.11.2",
     "radix-vue": "^1.7.3",
     "tailwind-merge": "^2.3.0",
