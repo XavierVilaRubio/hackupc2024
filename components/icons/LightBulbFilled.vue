@@ -4,7 +4,7 @@ withDefaults(
     size?: number
   }>(),
   {
-    size: 32,
+    size: 28,
   }
 )
 </script>
